@@ -2,11 +2,13 @@ const fs = require('fs');
 const mysql = require('mysql');
 const fastcsv = require('fast-csv');
 
-let stream = fs.createReadStream('product.csv');
+//cleans dirty data by doing sed 's/"default_price"//' product.csv > testProducts2.csv
+
+let stream = fs.createReadStream('testProducts2.csv');
 let csvData = [];
 let csvStream = fastcsv
   .parse()
-  .validate((row, cb) => typeof row[0] === 'number' && typeof row[1] === 'string')
+  // .validate((row, cb) => typeof row[0] === 'number' && typeof row[1] === 'string')
   .on('error', function(error, ...arguments) {
     console.log(arguments);
     console.error(error);
@@ -14,14 +16,14 @@ let csvStream = fastcsv
   .on('data', function(data) {
     csvData.push([data[0], data[1]]);
   })
-  .on('data-invalid', function(row, rowNumber, reason) {
-    if (rowNumber > 1) {
-      console.log(`invalid rownumber ${rowNumber}, row=${JSON.stringify(row)}, reason=${reason}`)
-      csvData.push([row[0], row[1]]);
-    } else if (rowNumber === 0 || rowNumber === 1) {
-      console.log(`invalid rownumber ${rowNumber}, row=${JSON.stringify(row)}, reason=${reason}`);
-    }
-  })
+  // .on('data-invalid', function(row, rowNumber, reason) {
+  //   if (rowNumber > 1) {
+  //     console.log(`invalid rownumber ${rowNumber}, row=${JSON.stringify(row)}, reason=${reason}`)
+  //     csvData.push([row[0], row[1]]);
+  //   } else if (rowNumber === 0 || rowNumber === 1) {
+  //     console.log(`invalid rownumber ${rowNumber}, row=${JSON.stringify(row)}, reason=${reason}`);
+  //   }
+  // })
   .on('end', function() {
     // remove the first line: header
     csvData.shift();
