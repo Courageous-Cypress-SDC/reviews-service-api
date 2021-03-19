@@ -42,7 +42,7 @@ CREATE TABLE reviews (
 CREATE TABLE characteristics (
   id INT NOT NULL AUTO_INCREMENT,
   product_id INT NOT NULL,
-  name varchar(16) not null
+  name varchar(16) not null,
   PRIMARY KEY (id),
   foreign key (product_id) references products(id)
 );

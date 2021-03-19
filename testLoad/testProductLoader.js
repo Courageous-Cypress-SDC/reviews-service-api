@@ -50,6 +50,7 @@ stream
               'INSERT INTO products (id, name) VALUES ?';
             connection.query(query, [rows], (error, response) => {
               console.log(error || response);
+              connection.end();
             });
           }
         });

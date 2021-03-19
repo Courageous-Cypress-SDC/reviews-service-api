@@ -79,6 +79,7 @@ function loadCharacteristics() {
                   console.log(err);
                 } else if (res) {
                   console.log(res);
+                  connection.end();
                 }
               });
             }
