@@ -11,6 +11,7 @@ const connection = mysql.createConnection({
 });
 
 let userRows = [];
+let rows = [];
 let weirdRows = [];
 let totalLines = 0;
 let counter = 0;
@@ -27,13 +28,13 @@ connection.connect((error) => {
         for (let i = 0; i < response.length; i++) {
           productIds.add(response[i].id);
         }
-        loadUsers();
+        loadReviews();
       }
     });
   }
 });
 
-function loadUsers() {
+function loadReviews() {
   const stream = fs.createReadStream('reviews.csv', 'UTF8');
   const rl = readline.createInterface({
     input: stream,
@@ -41,7 +42,7 @@ function loadUsers() {
   });
   rl.on('line', (line) => {
     counter++;
-    if (counter >= 1000000) {
+    if (counter >= 125000) {
       rl.pause();
     }
     let data = line.split(',');
@@ -57,20 +58,18 @@ function loadUsers() {
       totalLines++;
       return;
     }
-    let rating = data[2];
+    let rating = parseInt(data[2]);
     let parsedRating = parseInt(rating);
     if (isNaN(parsedRating) || parsedRating <= 0 || parsedRating > 5) {
       console.log('invalid rating');
       totalLines++;
       return;
     }
-    let date = data[3];
+    let date = new Date(data[3]);
     let summary = data[4].split('"')[1];
     if (summary.length > 60) {
       // console.log('summary too long');
       summary = summary.slice(0, 60);
-      // totalLines++;
-      // return;
     }
     let body = data[5].split('"')[1];
     if (body.length < 50) {
@@ -82,7 +81,17 @@ function loadUsers() {
       body = body.slice(0, 1000);
     }
     let recommend = data[6];
+    if (recommend === 'true') {
+      recommend = 1;
+    } else if (recommend === 'false') {
+      recommend = 0;
+    }
     let reported = data[7];
+    if (reported === 'true') {
+      reported = 1;
+    } else if (reported === 'false') {
+      reported = 0;
+    }
     let reviewer_name = data[8].split('"')[1];
     if (reviewer_name.length > 60) {
       console.log('reviewer name too long');
@@ -112,7 +121,7 @@ function loadUsers() {
       return;
     }
     if (totalLines != 0) {
-      userRows.push([reviewer_name, reviewer_email]);
+      rows.push([id, productId, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, response, helpfulness]);
     }
     totalLines++;
   })
@@ -123,20 +132,20 @@ function loadUsers() {
     .on('pause', () => {
       console.log('paused');
       console.log(totalLines);
-      console.log(userRows.length);
+      console.log(rows.length);
       console.log('weird rows: ', JSON.stringify(weirdRows));
       let query =
-        'INSERT INTO reviewers (name, email) VALUES ?';
-      connection.query(query, [userRows], (error, response) => {
+        'INSERT INTO reviews (id, product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, response, helpful) VALUES ?';
+      connection.query(query, [rows], (error, response) => {
         if (error) {
           console.log(error);
         } else {
           console.log(response);
         }
+        rows = [];
+        counter = 0;
+        rl.resume();
       })
-      userRows = [];
-      counter = 0;
-      rl.resume();
     })
     .on('resume', () => {
       console.log('resumed');
@@ -144,10 +153,8 @@ function loadUsers() {
     .on('close', () => {
       console.log('read entire file');
       console.log(totalLines);
-      console.log(userRows.length);
+      console.log(rows.length);
       console.log('weird rows: ', JSON.stringify(weirdRows));
       connection.end();
     });
 }
-
-// processLineByLine();
