@@ -47,11 +47,6 @@ function loadUsers() {
             weirdRows.push(totalLines);
           }
           let id = data[0];
-          if (parseInt(id) === 1) {
-            console.log('hi');
-            totalLines++;
-            return;
-          }
           let productId = data[1];
           // if (!productIds.has(productId)) {
           //   console.log('no product id found');
@@ -69,14 +64,13 @@ function loadUsers() {
           let summary = data[4].split('"')[1];
           if (summary.length > 60) {
             // console.log('summary too long');
-            // console.log(summary, summary.length);
             summary = summary.slice(0, 60);
             // totalLines++;
             // return;
           }
           let body = data[5].split('"')[1];
           if (body.length < 50) {
-            console.log('body too short');
+            //console.log('body too short');
             totalLines++;
             return;
           } else if (body.length > 1000) {
@@ -88,8 +82,7 @@ function loadUsers() {
           let reviewer_name = data[8];
           if (reviewer_name.length > 60) {
             console.log('reviewer name too long');
-            totalLines++;
-            return;
+            reviewer_name = reviewer_name.slice(60);
           }
           let reviewer_email = data[9].split('"')[1];
           const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -105,8 +98,7 @@ function loadUsers() {
           let response = data[10];
           if (response && response.length > 1000) {
             console.log('response is too long');
-            totalLines++;
-            return;
+            response = response.slice(1000);
           }
           let helpfulness = data[11];
           let parsedHelpful = parseInt(helpfulness);
