@@ -7,34 +7,37 @@ let csvData = [];
 
 let totalLines = 0;
 let rows = [];
+let userRows = [];
+let userRows2 = [];
+let userRows3 = [];
 let weirdRows = [];
 
-// const connection = mysql.createConnection({
-//   host: 'localhost',
-//   user: 'root',
-//   password: '123456',
-//   database: 'testCSVLoadOne'
-// });
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: '123456',
+  database: 'testCSVLoadOne'
+});
 
 let productIds = new Set();
-// connection.connect((error) => {
-//   if (error) {
-//     console.error(error);
-//   } else {
-//     let query = 'select id from products';
-//     connection.query(query, (err, response) => {
-//       if (err) {
-//         console.log(err);
-//       } else {
-//         for (let i = 0; i < response.length; i++) {
-//           productIds.add(response[i].id);
-//         }
-//         loadUsers();
-//       }
-//     });
-//   }
-// });
-loadUsers();
+connection.connect((error) => {
+  if (error) {
+    console.error(error);
+  } else {
+    let query = 'select id from products';
+    connection.query(query, (err, response) => {
+      if (err) {
+        console.log(err);
+      } else {
+        for (let i = 0; i < response.length; i++) {
+          productIds.add(response[i].id);
+        }
+        loadUsers();
+      }
+    });
+  }
+});
+// loadUsers();
 
 function loadUsers() {
   stream
@@ -48,14 +51,15 @@ function loadUsers() {
           }
           let id = data[0];
           let productId = data[1];
-          // if (!productIds.has(productId)) {
-          //   console.log('no product id found');
-          //   totalLines++;
-          //   return;
-          // }
+          if (!productIds.has(parseInt(productId))) {
+            console.log('no product id found');
+            console.log('id', productId);
+            totalLines++;
+            return;
+          }
           let rating = data[2];
           let parsedRating = parseInt(rating);
-          if (isNaN(parsedRating) || parsedRating < 0 || parsedRating > 5) {
+          if (isNaN(parsedRating) || parsedRating <= 0 || parsedRating > 5) {
             console.log('invalid rating');
             totalLines++;
             return;
@@ -108,7 +112,14 @@ function loadUsers() {
             return;
           }
           if (totalLines != 0) {// && productIds.has(productId)) {
-            rows.push([id, productId, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, response, helpfulness]);
+            //rows.push([id, productId, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, response, helpfulness]);
+            if (userRows2.length >= 1850000) {
+              userRows3.push([reviewer_name, reviewer_email]);
+            } else if (userRows.length >= 1850000) {
+              userRows2.push([reviewer_name, reviewer_email]);
+            } else {
+              userRows.push([reviewer_name, reviewer_email]);
+            }
           }
           totalLines++;
         })
@@ -118,7 +129,10 @@ function loadUsers() {
         .on('end', () => {
           console.log('read entire file');
           console.log(totalLines);
-          console.log(rows.length);
+          //console.log(rows.length);
+          console.log(userRows.length);
+          console.log(userRows2.length);
+          console.log(userRows3.length);
           console.log('weird rows: ', JSON.stringify(weirdRows));
           // const connection = mysql.createConnection({
           //   host: 'localhost',
@@ -127,18 +141,29 @@ function loadUsers() {
           //   database: 'testCSVLoadOne'
           // });
 
-          // // open the connection
-          // connection.connect(error => {
-          //   if (error) {
-          //     console.error(error);
-          //   } else {
-          //     let query =
-          //       'INSERT INTO reviewers (id, name) VALUES ?';
-          //     connection.query(query, [rows], (error, response) => {
-          //       console.log(error || response);
-          //     });
-          //   }
-          // });
+          // open the connection
+          let query =
+            'INSERT INTO users (name, email) VALUES ?';
+          connection.query(query, [userRows], (error, response) => {
+            if (error) {
+              console.log(error);
+            } else {
+              console.log(response);
+              connection.query(query, [userRows2], (err, res) => {
+                if (err) {
+                  console.log(err);
+                } else {
+                  console.log(res);
+                  connection.query(query, [userRows3], (err3, res3) => {
+                    console.log(err3 || res3);
+                    connection.end();
+                  })
+                }
+              })
+            }
+            // connection.end();
+            // console.log(error || response);
+          });
         })
     );
 }
