@@ -49,7 +49,7 @@ app.get('/', (req, res) => {
   }
 
   console.log('get reviews');
-  let query = 'select * from reviews limit 5';
+  let query = `select r.id, r.product_id, r.rating, r.date, r.body, r.recommend, r.reported, r.reviewer_name, r.reviewer_email, r.response, r.helpful from reviews r INNER JOIN products p on p.id = r.product_id where p.id = ${productId} limit 5`;
   connection.query(query, (error, response) => {
     if (error) {
       res.status(500).send(error);
