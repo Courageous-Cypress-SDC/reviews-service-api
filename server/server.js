@@ -49,7 +49,7 @@ app.get('/', (req, res) => {
   }
 
   console.log('get reviews');
-  let query = `select r.id, r.product_id, r.rating, r.date, r.body, r.recommend, r.reported, r.reviewer_name, r.reviewer_email, r.response, r.helpful from reviews r INNER JOIN products p on p.id = r.product_id where p.id = ${productId} limit 5`;
+  let query = `select r.id, r.product_id, r.rating, r.date, r.body, r.recommend, r.reported, r.reviewer_name, r.reviewer_email, r.response, r.helpful from reviews r INNER JOIN products p on p.id = r.product_id where p.id = ${productId} limit ${count}`;
   connection.query(query, (error, response) => {
     if (error) {
       res.status(500).send(error);
@@ -58,17 +58,60 @@ app.get('/', (req, res) => {
       res.send(response);
     }
   });
-  //res.send('get reviews');
 });
 
 // GET /reviews/meta
+/*
+{
+  "product_id": "2",
+  "ratings": {
+    2: 1,
+    3: 1,
+    4: 2,
+    // ...
+  },
+  "recommended": {
+    0: 5
+    // ...
+  },
+  "characteristics": {
+    "Size": {
+      "id": 14,
+      "value": "4.0000"
+    },
+    "Width": {
+      "id": 15,
+      "value": "3.5000"
+    },
+    "Comfort": {
+      "id": 16,
+      "value": "4.0000"
+    },
+    // ...
+}
+*/
 app.get('/meta', (req, res) => {
-  res.send('get meta');
+  const queryObject = url.parse(req.url,true).query;
+  console.log(queryObject);
+  console.log('get meta');
+  const productId = queryObject.product_id;
+  //count(r.rating) as rating group by r.rating
+  let query = `select p.id, r.rating, count(r.rating) as ratingCount from products p inner join reviews r on p.id = r.product_id where p.id = ${productId} group by r.rating order by r.rating`;
+  //let query = `select count(rating) from reviews where product_id = ${productId} group by rating`;
+  connection.query(query, (error, response) => {
+    if (error) {
+      res.status(500).send(error);
+    } else {
+      console.log('get meta success', response);
+      res.send(response);
+    }
+  });
 });
 
 // POST /reviews
 app.post('/', (req, res) => {
   res.send('post reviews');
+
 });
 
 // PUT /reviews/:review_id/helpful
