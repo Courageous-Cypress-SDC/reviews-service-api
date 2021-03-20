@@ -30,6 +30,49 @@ connection.connect((error) => {
 const reviewSorts = new Set(['newest', 'helpful', 'relevant']);
 
 // GET /reviews
+/*
+{
+  "product": "2",
+  "page": 0,
+  "count": 5,
+  "results": [
+    {
+      "review_id": 5,
+      "rating": 3,
+      "summary": "I'm enjoying wearing these shades",
+      "recommend": false,
+      "response": null,
+      "body": "Comfortable and practical.",
+      "date": "2019-04-14T00:00:00.000Z",
+      "reviewer_name": "shortandsweeet",
+      "helpfulness": 5,
+      "photos": [{
+          "id": 1,
+          "url": "urlplaceholder/review_5_photo_number_1.jpg"
+        },
+        {
+          "id": 2,
+          "url": "urlplaceholder/review_5_photo_number_2.jpg"
+        },
+        // ...
+      ]
+    },
+    {
+      "review_id": 3,
+      "rating": 4,
+      "summary": "I am liking these glasses",
+      "recommend": false,
+      "response": "Glad you're enjoying the product!",
+      "body": "They are very dark. But that's good because I'm in very sunny spots",
+      "date": "2019-06-23T00:00:00.000Z",
+      "reviewer_name": "bigbrotherbenjamin",
+      "helpfulness": 5,
+      "photos": [],
+    },
+    // ...
+  ]
+}
+*/
 app.get('/', (req, res) => {
   const queryObject = url.parse(req.url,true).query;
   console.log(queryObject);
@@ -49,13 +92,21 @@ app.get('/', (req, res) => {
   }
 
   console.log('get reviews');
+  // let query =
+  //   `select r.id, r.product_id, r.rating, r.date, r.body, r.recommend, r.reported, r.reviewer_name, r.reviewer_email, r.response, r.helpful, ph.url
+  //   from products p
+  //   INNER JOIN reviews r
+  //   on p.id = r.product_id
+  //   left join photos ph
+  //   on r.id = ph.review_id
+  //   where p.id = ${productId}
+  //   limit ${count}`;
+
   let query =
-    `select r.id, r.product_id, r.rating, r.date, r.body, r.recommend, r.reported, r.reviewer_name, r.reviewer_email, r.response, r.helpful, ph.url
+    `select r.id as review_id, r.rating, r.summary, r.recommend, r.response, r.body, r.date, r.reviewer_name, r.helpful as helpfulness
     from products p
     INNER JOIN reviews r
     on p.id = r.product_id
-    left join photos ph
-    on r.id = ph.review_id
     where p.id = ${productId}
     limit ${count}`;
 
@@ -64,7 +115,35 @@ app.get('/', (req, res) => {
       res.status(500).send(error);
     } else {
       console.log('get reviews success');
-      res.send(response);
+      let responseObj = {
+        product: productId,
+        page: page,
+        count: count,
+        results: response,
+      }
+      if (response.length === 0) {
+        res.send(responseObj);
+      }
+      for (let i = 0; i < response.length; i++) {
+        let photoQuery =
+          `select ph.id, url
+          from photos ph
+          inner join reviews r
+          on r.id = ph.review_id
+          where r.id = ${response[i].review_id}`
+        connection.query(photoQuery, (phErr, phRes) => {
+          if (phErr) {
+            res.status(500).send(phErr);
+          } else {
+            console.log('get reviews photos success');
+            responseObj.results[i].photos = phRes;
+            if (i === response.length - 1) {
+              res.send(responseObj);
+            }
+          }
+        });
+      }
+      // res.send(response);
     }
   });
 });
