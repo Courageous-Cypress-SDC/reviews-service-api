@@ -58,7 +58,7 @@ app.get('/', (req, res) => {
     from products p
     INNER JOIN reviews r
     on p.id = r.product_id
-    where p.id = ${productId}
+    where p.id = ${productId} and reported = 0
     order by ${order}
     limit ${count}`;
 
@@ -193,12 +193,25 @@ app.put('/*/helpful', (req, res) => {
       console.log('updated', reviewId);
       res.status(204).send('');
     }
-  })
+  });
 });
 
 // PUT /reviews/:review_id/report
 app.put('/*/report', (req, res) => {
-  res.send('put report');
+  console.log(req.url);
+  let reviewId = req.url.split('/')[1];
+  let query =
+    `update reviews
+    set reported = 1
+    where id = ${reviewId}`;
+  connection.query(query, (error, response) => {
+    if (error) {
+      res.status(500).send(error);
+    } else {
+      console.log('reported', reviewId);
+      res.status(204).send('');
+    }
+  });
 });
 
 const port = 4001;
