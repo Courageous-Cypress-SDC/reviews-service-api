@@ -101,13 +101,19 @@ app.get('/', (req, res) => {
   //   on r.id = ph.review_id
   //   where p.id = ${productId}
   //   limit ${count}`;
-
+  let order = 'r.helpful desc, r.date desc';
+  if (sortBy === 'newest') {
+    order = 'r.date desc';
+  } else if (sortBy === 'helpful') {
+    order = 'r.helpful desc';
+  }
   let query =
     `select r.id as review_id, r.rating, r.summary, r.recommend, r.response, r.body, r.date, r.reviewer_name, r.helpful as helpfulness
     from products p
     INNER JOIN reviews r
     on p.id = r.product_id
     where p.id = ${productId}
+    order by ${order}
     limit ${count}`;
 
   connection.query(query, (error, response) => {
