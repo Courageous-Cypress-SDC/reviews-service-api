@@ -126,7 +126,24 @@ app.get('/meta', (req, res) => {
         } else {
           console.log('get meta recommend success', recRes);
           recommends = recRes;
-          res.send({ratings, recommends});
+          let charQuery =
+            `select p.id as productId, c.id, c.name, avg(cr.value) as value
+            from products p
+            inner join characteristics c
+            on p.id = c.product_id
+            inner join characteristics_reviews cr
+            on cr.characteristic_id = c.id
+            where p.id = ${productId}
+            group by c.id, c.name`;
+          connection.query(charQuery, (charErr, charRes) => {
+            if (charErr) {
+              res.status(500).send(charErr);
+            } else {
+              console.log('get meta char success', charRes);
+              characteristics = charRes;
+              res.send({ ratings, recommends, characteristics });
+            }
+          })
         }
       })
     }
