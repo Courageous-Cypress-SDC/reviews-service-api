@@ -30,53 +30,9 @@ connection.connect((error) => {
 const reviewSorts = new Set(['newest', 'helpful', 'relevant']);
 
 // GET /reviews
-/*
-{
-  "product": "2",
-  "page": 0,
-  "count": 5,
-  "results": [
-    {
-      "review_id": 5,
-      "rating": 3,
-      "summary": "I'm enjoying wearing these shades",
-      "recommend": false,
-      "response": null,
-      "body": "Comfortable and practical.",
-      "date": "2019-04-14T00:00:00.000Z",
-      "reviewer_name": "shortandsweeet",
-      "helpfulness": 5,
-      "photos": [{
-          "id": 1,
-          "url": "urlplaceholder/review_5_photo_number_1.jpg"
-        },
-        {
-          "id": 2,
-          "url": "urlplaceholder/review_5_photo_number_2.jpg"
-        },
-        // ...
-      ]
-    },
-    {
-      "review_id": 3,
-      "rating": 4,
-      "summary": "I am liking these glasses",
-      "recommend": false,
-      "response": "Glad you're enjoying the product!",
-      "body": "They are very dark. But that's good because I'm in very sunny spots",
-      "date": "2019-06-23T00:00:00.000Z",
-      "reviewer_name": "bigbrotherbenjamin",
-      "helpfulness": 5,
-      "photos": [],
-    },
-    // ...
-  ]
-}
-*/
 app.get('/', (req, res) => {
   const queryObject = url.parse(req.url,true).query;
   console.log(queryObject);
-
   const page = queryObject.page || 1;
   const count = queryObject.count || 5;
   const productId = queryObject.product_id;
@@ -90,17 +46,7 @@ app.get('/', (req, res) => {
     res.status(500).send('Invalid sort method');
     return;
   }
-
   console.log('get reviews');
-  // let query =
-  //   `select r.id, r.product_id, r.rating, r.date, r.body, r.recommend, r.reported, r.reviewer_name, r.reviewer_email, r.response, r.helpful, ph.url
-  //   from products p
-  //   INNER JOIN reviews r
-  //   on p.id = r.product_id
-  //   left join photos ph
-  //   on r.id = ph.review_id
-  //   where p.id = ${productId}
-  //   limit ${count}`;
   let order = 'r.helpful desc, r.date desc';
   if (sortBy === 'newest') {
     order = 'r.date desc';
@@ -151,41 +97,11 @@ app.get('/', (req, res) => {
           }
         });
       }
-      // res.send(response);
     }
   });
 });
 
 // GET /reviews/meta
-/*
-{
-  "product_id": "2",
-  "ratings": {
-    2: 1,
-    3: 1,
-    4: 2,
-    // ...
-  },
-  "recommended": {
-    0: 5
-    // ...
-  },
-  "characteristics": {
-    "Size": {
-      "id": 14,
-      "value": "4.0000"
-    },
-    "Width": {
-      "id": 15,
-      "value": "3.5000"
-    },
-    "Comfort": {
-      "id": 16,
-      "value": "4.0000"
-    },
-    // ...
-}
-*/
 app.get('/meta', (req, res) => {
   const queryObject = url.parse(req.url,true).query;
   console.log(queryObject);
@@ -194,15 +110,14 @@ app.get('/meta', (req, res) => {
   let responseObj = {
     product_id: productId,
   }
-  //count(r.rating) as rating group by r.rating
   let ratingQuery =
     `select r.rating, count(r.rating) as ratingCount
-    from products p inner join reviews r
+    from products p
+    inner join reviews r
     on p.id = r.product_id
     where p.id = ${productId}
     group by r.rating
     order by r.rating`;
-  //let query = `select count(rating) from reviews where product_id = ${productId} group by rating`;
   connection.query(ratingQuery, (error, response) => {
     if (error) {
       res.status(500).send(error);
@@ -214,7 +129,8 @@ app.get('/meta', (req, res) => {
       }
       let recommendQuery =
         `select r.recommend, count(r.recommend) as recommendCount
-        from products p inner join reviews r
+        from products p
+        inner join reviews r
         on p.id = r.product_id
         where p.id = ${productId}
         group by r.recommend
@@ -228,7 +144,6 @@ app.get('/meta', (req, res) => {
           for (let i = 0; i < recRes.length; i++) {
             responseObj.recommended[recRes[i].recommend] = recRes[i].recommendCount;
           }
-          //responseObj.recommended = recRes;
           let charQuery =
             `select c.id, c.name, avg(cr.value) as value
             from products p
@@ -249,7 +164,6 @@ app.get('/meta', (req, res) => {
                 responseObj.characteristics[charRes[i].name].id = charRes[i].id;
                 responseObj.characteristics[charRes[i].name].value = charRes[i].value;
               }
-              // responseObj.characteristics = charRes;
               res.send(responseObj);
             }
           })
