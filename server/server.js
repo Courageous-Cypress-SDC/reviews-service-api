@@ -49,7 +49,16 @@ app.get('/', (req, res) => {
   }
 
   console.log('get reviews');
-  let query = `select r.id, r.product_id, r.rating, r.date, r.body, r.recommend, r.reported, r.reviewer_name, r.reviewer_email, r.response, r.helpful from reviews r INNER JOIN products p on p.id = r.product_id where p.id = ${productId} limit ${count}`;
+  let query =
+    `select r.id, r.product_id, r.rating, r.date, r.body, r.recommend, r.reported, r.reviewer_name, r.reviewer_email, r.response, r.helpful, ph.url
+    from products p
+    INNER JOIN reviews r
+    on p.id = r.product_id
+    left join photos ph
+    on r.id = ph.review_id
+    where p.id = ${productId}
+    limit ${count}`;
+
   connection.query(query, (error, response) => {
     if (error) {
       res.status(500).send(error);
