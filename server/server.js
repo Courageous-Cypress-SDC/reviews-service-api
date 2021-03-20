@@ -95,15 +95,40 @@ app.get('/meta', (req, res) => {
   console.log(queryObject);
   console.log('get meta');
   const productId = queryObject.product_id;
+  let ratings = [];
+  let recommends = [];
+  let characteristics = [];
   //count(r.rating) as rating group by r.rating
-  let query = `select p.id, r.rating, count(r.rating) as ratingCount from products p inner join reviews r on p.id = r.product_id where p.id = ${productId} group by r.rating order by r.rating`;
+  let ratingQuery =
+    `select p.id, r.rating, count(r.rating) as ratingCount
+    from products p inner join reviews r
+    on p.id = r.product_id
+    where p.id = ${productId}
+    group by r.rating
+    order by r.rating`;
   //let query = `select count(rating) from reviews where product_id = ${productId} group by rating`;
-  connection.query(query, (error, response) => {
+  connection.query(ratingQuery, (error, response) => {
     if (error) {
       res.status(500).send(error);
     } else {
-      console.log('get meta success', response);
-      res.send(response);
+      console.log('get meta rating success', response);
+      ratings = response;
+      let recommendQuery =
+        `select p.id, r.recommend, count(r.recommend) as recommendCount
+        from products p inner join reviews r
+        on p.id = r.product_id
+        where p.id = ${productId}
+        group by r.recommend
+        order by r.recommend`;
+      connection.query(recommendQuery, (recErr, recRes) => {
+        if (recErr) {
+          res.status(500).send(recErr);
+        } else {
+          console.log('get meta recommend success', recRes);
+          recommends = recRes;
+          res.send({ratings, recommends});
+        }
+      })
     }
   });
 });
