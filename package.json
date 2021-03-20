@@ -1,0 +1,21 @@
+{
+  "name": "project-catwalk-reviews-service",
+  "version": "1.0.0",
+  "description": "API Service for ratings and reviews for project-catwalk",
+  "scripts": {
+    "server-dev": "npx nodemon server/server.js"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "express": "^4.17.1",
+    "npm": "^7.6.1"
+  },
+  "devDependencies": {
+    "eslint": "^7.20.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1",
+    "event-stream": "^4.0.1",
+    "mysql": "^2.18.1",
+    "nodemon": "^2.0.7"
+  }
+}
