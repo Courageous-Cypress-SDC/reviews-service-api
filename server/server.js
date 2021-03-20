@@ -143,6 +143,8 @@ app.get('/', (req, res) => {
           } else {
             console.log('get reviews photos success');
             responseObj.results[i].photos = phRes;
+            let recommended = responseObj.results[i].recommend;
+            responseObj.results[i].recommend = recommended === 0 ? false: true;
             if (i === response.length - 1) {
               res.send(responseObj);
             }
@@ -189,12 +191,12 @@ app.get('/meta', (req, res) => {
   console.log(queryObject);
   console.log('get meta');
   const productId = queryObject.product_id;
-  let ratings = [];
-  let recommends = [];
-  let characteristics = [];
+  let responseObj = {
+    product_id: productId,
+  }
   //count(r.rating) as rating group by r.rating
   let ratingQuery =
-    `select p.id, r.rating, count(r.rating) as ratingCount
+    `select r.rating, count(r.rating) as ratingCount
     from products p inner join reviews r
     on p.id = r.product_id
     where p.id = ${productId}
@@ -206,9 +208,12 @@ app.get('/meta', (req, res) => {
       res.status(500).send(error);
     } else {
       console.log('get meta rating success', response);
-      ratings = response;
+      responseObj.ratings = {};
+      for (let i = 0; i < response.length; i++) {
+        responseObj.ratings[response[i].rating] = response[i].ratingCount;
+      }
       let recommendQuery =
-        `select p.id, r.recommend, count(r.recommend) as recommendCount
+        `select r.recommend, count(r.recommend) as recommendCount
         from products p inner join reviews r
         on p.id = r.product_id
         where p.id = ${productId}
@@ -219,9 +224,13 @@ app.get('/meta', (req, res) => {
           res.status(500).send(recErr);
         } else {
           console.log('get meta recommend success', recRes);
-          recommends = recRes;
+          responseObj.recommended = {};
+          for (let i = 0; i < recRes.length; i++) {
+            responseObj.recommended[recRes[i].recommend] = recRes[i].recommendCount;
+          }
+          //responseObj.recommended = recRes;
           let charQuery =
-            `select p.id as productId, c.id, c.name, avg(cr.value) as value
+            `select c.id, c.name, avg(cr.value) as value
             from products p
             inner join characteristics c
             on p.id = c.product_id
@@ -234,8 +243,14 @@ app.get('/meta', (req, res) => {
               res.status(500).send(charErr);
             } else {
               console.log('get meta char success', charRes);
-              characteristics = charRes;
-              res.send({ ratings, recommends, characteristics });
+              responseObj.characteristics = {};
+              for (let i = 0; i < charRes.length; i++) {
+                responseObj.characteristics[charRes[i].name] = {};
+                responseObj.characteristics[charRes[i].name].id = charRes[i].id;
+                responseObj.characteristics[charRes[i].name].value = charRes[i].value;
+              }
+              // responseObj.characteristics = charRes;
+              res.send(responseObj);
             }
           })
         }
