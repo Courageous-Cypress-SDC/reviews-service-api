@@ -1,5 +1,4 @@
 const fs = require('fs');
-//const es = require('event-stream');
 const mysql = require('mysql');
 const readline = require('readline');
 

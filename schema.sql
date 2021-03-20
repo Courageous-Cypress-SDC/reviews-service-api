@@ -18,13 +18,14 @@ CREATE TABLE reviewers (
 CREATE TABLE reviews (
   id INT NOT NULL AUTO_INCREMENT,
   product_id int not null,
-  reviewer_id int not null,
   date DATETIME DEFAULT CURRENT_TIMESTAMP, -- on update current_timestamp
-  rating bit(5) not null,
+  rating tinyint(6) not null,
   summary TINYTEXT not null,
   body varchar(1000) not null,
-  recommended bool not null,
+  recommend bool not null,
   response varchar(1000),
+  reviewer_name varchar(60) not null,
+  reviewer_email varchar(60) not null,
   -- size bit(5) not null,
   -- width bit(5) not null,
   -- comfort bit(5) not null,
@@ -51,7 +52,7 @@ CREATE TABLE characteristics_reviews (
   id INT NOT NULL AUTO_INCREMENT,
   characteristic_id int not null,
   review_id int not null,
-  value bit(5) not null,
+  value tinyint(6) not null,
   PRIMARY KEY (id),
   foreign key (characteristic_id) references characteristics(id),
   foreign key (review_id) references reviews(id)
