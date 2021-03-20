@@ -176,12 +176,24 @@ app.get('/meta', (req, res) => {
 // POST /reviews
 app.post('/', (req, res) => {
   res.send('post reviews');
-
 });
 
 // PUT /reviews/:review_id/helpful
 app.put('/*/helpful', (req, res) => {
-  res.send('put helpful');
+  console.log(req.url);
+  let reviewId = req.url.split('/')[1];
+  let query =
+    `update reviews
+    set helpful = helpful + 1
+    where id = ${reviewId}`;
+  connection.query(query, (error, response) => {
+    if (error) {
+      res.status(500).send(error);
+    } else {
+      console.log('updated', reviewId);
+      res.status(204).send('');
+    }
+  })
 });
 
 // PUT /reviews/:review_id/report
