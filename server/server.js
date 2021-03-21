@@ -175,7 +175,68 @@ app.get('/meta', (req, res) => {
 
 // POST /reviews
 app.post('/', (req, res) => {
-  res.send('post reviews');
+  const {
+    product_id,
+    rating,
+    summary,
+    body,
+    recommend,
+    name,
+    email,
+    photos,
+    characteristics
+  } = req.body;
+  console.log(req.body);
+  // validate date here
+  // transaction
+  connection.beginTransaction((err) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send(err);
+    } else {
+      let options = [product_id, rating, summary, body, recommend, name, email];
+      let query =
+        `insert into reviews (product_id, rating, summary, body, recommend, name, email, photos, characteristics) values (?, ?, ?, ?, ?, ?, ?)`;
+      connection.query(query, options, (err, results, fields) => {
+        if (err) {
+          console.error(err);
+          connection.rollback(function() {
+            res.status(500).send(err);
+          });
+          return;
+        } else {
+          console.log('inserted into reviews');
+          let newReviewId = results.insertId;
+          //insert into photos,
+          //insert into characteristics
+          // product_id, name -> get char_id
+          // insert into char_reviews (char_id, review_id, value);
+          // https://stackoverflow.com/questions/49529231/transaction-management-in-nodejs-with-mysql
+          if (photos.length > 0) {
+            let photosQuery =
+              `insert into photos (review_id, url) values ?`;
+            let photoOptions = [];
+            for (let i = 0; i < photos.length; i++) {
+              photoOptions.push([newReviewId, photos[i]]);
+            }
+            connection.query(photosQuery, [photoOptions], (err, results, fields) => {
+              if (err) {
+                console.error(err);
+                connection.rollback(function() {
+                  res.status(500).send(err);
+                });
+                return;
+              } else {
+                res.status(201).send('');
+              }
+            });
+          }
+          //console.log('asdf');
+        }
+      });
+    }
+  })
+  //res.send('post reviews');
 });
 
 // PUT /reviews/:review_id/helpful
