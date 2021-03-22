@@ -53,15 +53,15 @@ app.get('/', (req, res) => {
   } else if (sortBy === 'helpful') {
     order = 'r.helpful desc';
   }
-  let query =
-    `select r.id as review_id, r.rating, r.summary, r.recommend, r.response, r.body, r.date, r.reviewer_name, r.helpful as helpfulness
-    from products p
-    INNER JOIN reviews r
-    on p.id = r.product_id
-    where p.id = ${productId} and reported = 0
-    order by ${order}
-    limit ${count}`;
-
+  // let query =
+  //   `select r.id as review_id, r.rating, r.summary, r.recommend, r.response, r.body, r.date, r.reviewer_name, r.helpful as helpfulness
+  //   from products p
+  //   INNER JOIN reviews r
+  //   on p.id = r.product_id
+  //   where p.id = ${productId} and reported = 0
+  //   order by ${order}
+  //   limit ${count}`;
+  let query = mysql.format('select r.id as review_id, r.rating, r.summary, r.recommend, r.response, r.body, r.date, r.reviewer_name, r.helpful as helpfulness from products p INNER JOIN reviews r on p.id = r.product_id where p.id = ? and reported = 0 order by ? limit ?', [parseInt(productId), order, parseInt(count)]);
   connection.query(query, (error, response) => {
     if (error) {
       res.status(500).send(error);
@@ -110,14 +110,15 @@ app.get('/meta', (req, res) => {
   let responseObj = {
     product_id: productId,
   }
-  let ratingQuery =
-    `select r.rating, count(r.rating) as ratingCount
-    from products p
-    inner join reviews r
-    on p.id = r.product_id
-    where p.id = ${productId}
-    group by r.rating
-    order by r.rating`;
+  // let ratingQuery =
+  //   `select r.rating, count(r.rating) as ratingCount
+  //   from products p
+  //   inner join reviews r
+  //   on p.id = r.product_id
+  //   where p.id = ${productId}
+  //   group by r.rating
+  //   order by r.rating`;
+  let ratingQuery = mysql.format('select r.rating, count(r.rating) as ratingCount from products p inner join reviews r on p.id = r.product_id where p.id = ? group by r.rating order by r.rating', [parseInt(productId)]);
   connection.query(ratingQuery, (error, response) => {
     if (error) {
       res.status(500).send(error);
@@ -127,14 +128,15 @@ app.get('/meta', (req, res) => {
       for (let i = 0; i < response.length; i++) {
         responseObj.ratings[response[i].rating] = response[i].ratingCount;
       }
-      let recommendQuery =
-        `select r.recommend, count(r.recommend) as recommendCount
-        from products p
-        inner join reviews r
-        on p.id = r.product_id
-        where p.id = ${productId}
-        group by r.recommend
-        order by r.recommend`;
+      // let recommendQuery =
+      //   `select r.recommend, count(r.recommend) as recommendCount
+      //   from products p
+      //   inner join reviews r
+      //   on p.id = r.product_id
+      //   where p.id = ${productId}
+      //   group by r.recommend
+      //   order by r.recommend`;
+      let recommendQuery = mysql.format('select r.recommend, count(r.recommend) as recommendCount from products p inner join reviews r on p.id = r.product_id where p.id = ? group by r.recommend order by r.recommend', [parseInt(productId)])
       connection.query(recommendQuery, (recErr, recRes) => {
         if (recErr) {
           res.status(500).send(recErr);
@@ -144,15 +146,16 @@ app.get('/meta', (req, res) => {
           for (let i = 0; i < recRes.length; i++) {
             responseObj.recommended[recRes[i].recommend] = recRes[i].recommendCount;
           }
-          let charQuery =
-            `select c.id, c.name, avg(cr.value) as value
-            from products p
-            inner join characteristics c
-            on p.id = c.product_id
-            inner join characteristics_reviews cr
-            on cr.characteristic_id = c.id
-            where p.id = ${productId}
-            group by c.id, c.name`;
+          // let charQuery =
+          //   `select c.id, c.name, avg(cr.value) as value
+          //   from products p
+          //   inner join characteristics c
+          //   on p.id = c.product_id
+          //   inner join characteristics_reviews cr
+          //   on cr.characteristic_id = c.id
+          //   where p.id = ${productId}
+          //   group by c.id, c.name`;
+          let charQuery = mysql.format('select c.id, c.name, avg(cr.value) as value from products p inner join characteristics c on p.id = c.product_id inner join characteristics_reviews cr on cr.characteristic_id = c.id where p.id = ? group by c.id, c.name', [parseInt(productId)]);
           connection.query(charQuery, (charErr, charRes) => {
             if (charErr) {
               res.status(500).send(charErr);
@@ -243,10 +246,11 @@ app.post('/', (req, res) => {
 app.put('/*/helpful', (req, res) => {
   console.log(req.url);
   let reviewId = req.url.split('/')[1];
-  let query =
-    `update reviews
-    set helpful = helpful + 1
-    where id = ${reviewId}`;
+  // let query =
+  //   `update reviews
+  //   set helpful = helpful + 1
+  //   where id = ${reviewId}`;
+  let query = mysql.format('update reviews set helpful = helpful + 1 where id = ?', [parseInt(reviewId)]);
   connection.query(query, (error, response) => {
     if (error) {
       res.status(500).send(error);
@@ -261,10 +265,11 @@ app.put('/*/helpful', (req, res) => {
 app.put('/*/report', (req, res) => {
   console.log(req.url);
   let reviewId = req.url.split('/')[1];
-  let query =
-    `update reviews
-    set reported = 1
-    where id = ${reviewId}`;
+  // let query =
+  //   `update reviews
+  //   set reported = 1
+  //   where id = ${reviewId}`;
+  let query = mysql.format('update reviews set reported = 1 where id = ?', [parseInt(reviewId)]);
   connection.query(query, (error, response) => {
     if (error) {
       res.status(500).send(error);
