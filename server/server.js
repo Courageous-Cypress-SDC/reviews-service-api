@@ -16,7 +16,8 @@ const connection = mysql.createConnection({
   host: 'localhost',
   user: config.SQLUSER,
   password: config.SQLPASSWORD,
-  database: config.SQLDATABASE
+  database: config.SQLDATABASE,
+  multipleStatements: true
 });
 
 connection.connect((error) => {
@@ -76,6 +77,7 @@ app.get('/', (req, res) => {
       if (response.length === 0) {
         res.send(responseObj);
       }
+      const photoQueries = [];
       for (let i = 0; i < response.length; i++) {
         let photoQuery =
           `select ph.id, url
@@ -83,20 +85,23 @@ app.get('/', (req, res) => {
           inner join reviews r
           on r.id = ph.review_id
           where r.id = ${response[i].review_id}`
-        connection.query(photoQuery, (phErr, phRes) => {
-          if (phErr) {
-            res.status(500).send(phErr);
-          } else {
-            console.log('get reviews photos success');
-            responseObj.results[i].photos = phRes;
+        photoQueries[i] = photoQuery;
+      }
+      connection.query(photoQueries.join(';'), (phErr, phRes) => {
+        if (phErr) {
+          res.status(500).send(phErr);
+        } else {
+          console.log('get reviews photos success');
+          for (let i = 0; i < response.length; i++) {
+            responseObj.results[i].photos = phRes[i];
             let recommended = responseObj.results[i].recommend;
             responseObj.results[i].recommend = recommended === 0 ? false: true;
             if (i === response.length - 1) {
               res.send(responseObj);
             }
           }
-        });
-      }
+        }
+      });
     }
   });
 });
