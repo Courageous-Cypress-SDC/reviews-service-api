@@ -274,17 +274,8 @@ app.post('/', (req, res) => {
         } else {
           console.log('inserted into reviews');
           let newReviewId = results.insertId;
-          //insert into photos, if there are any so it might be better to do this after characteristics
-          //insert into characteristics
-          // product_id, name -> get char_id
-          // insert into char_reviews (char_id, review_id, value);
-          // https://stackoverflow.com/questions/49529231/transaction-management-in-nodejs-with-mysql
-          /*
-            characteristics:
-              char_id: value
-              extract char_id, check if char_id match, if not abort
-            then batch insert into characteristics reviews
-          */
+          // insert into char_reviews
+          // then insert to photos if any
           let checkIdQuery = mysql.format(`
             select c.id
             from characteristics c
