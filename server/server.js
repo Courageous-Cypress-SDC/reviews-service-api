@@ -78,6 +78,7 @@ app.get('/', (req, res) => {
   connection.query(query, (error, response) => {
     if (error) {
       res.status(500).send(error);
+      return;
     } else {
       // console.log('get reviews success');
       let responseObj = {
@@ -88,6 +89,7 @@ app.get('/', (req, res) => {
       }
       if (response.length === 0) {
         res.send(responseObj);
+        return;
       }
       // res.send(responseObj);
       const photoQueries = [];
@@ -109,10 +111,8 @@ app.get('/', (req, res) => {
             responseObj.results[i].photos = phRes[i];
             let recommended = responseObj.results[i].recommend;
             responseObj.results[i].recommend = recommended === 0 ? false: true;
-            if (i === response.length - 1) {
-              res.send(responseObj);
-            }
           }
+          res.send(responseObj);
         }
       });
     }
@@ -292,7 +292,7 @@ app.post('/', (req, res) => {
             const charIdSet = new Set();
             const charLength = Object.keys(characteristics).length;
             const charRevRows = [];
-            if (idRes.length === undefined) {
+            if (idRes === undefined || idRes.length === undefined) {
               console.log('Invalid characteristic_id');
               connection.rollback(function() {
                 res.status(500).send('Invalid characteristic_id');
@@ -345,8 +345,11 @@ app.post('/', (req, res) => {
                   }
                   connection.commit((commitErr) => {
                     if (commitErr) {
-                      console.err()
-                      res.status(500).send(commitErr);
+                      console.error(commitErr)
+                      connection.rollback(function() {
+                        res.status(500).send(commitErr);
+                      });
+                      // res.status(500).send(commitErr);
                       return;
                     }
                     res.status(201).send('');
@@ -355,8 +358,10 @@ app.post('/', (req, res) => {
               } else {
                 connection.commit((commitErr) => {
                   if (commitErr) {
-                    console.err()
-                    res.status(500).send(commitErr);
+                    console.error(commitErr)
+                    connection.rollback(function() {
+                      res.status(500).send(commitErr);
+                    });
                     return;
                   }
                   res.status(201).send('');
